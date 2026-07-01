@@ -49,6 +49,16 @@ GitHub Pages 设置：
 Settings -> Pages -> Deploy from a branch -> main -> / (root)
 ```
 
+## 部署到 Vercel
+
+这个仓库也支持 Vercel 动态部署。Vercel 会托管静态页面，并把 `api/*.py` 作为 Serverless API 运行：
+
+```bash
+vercel --prod
+```
+
+部署后页面会优先请求同域名下的 `/api/account` 和 `/api/settlement-candidates`，再由 Vercel 后端代理 Polymarket 公开 API。
+
 ## 安全边界
 
 第一版不保存私钥，不派生 API key，不自动下单。现金余额如果需要精确读取，需要再接授权账户接口或链上余额源。
