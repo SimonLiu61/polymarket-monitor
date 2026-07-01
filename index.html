@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Polymarket Monitor</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">PM</div>
+          <div>
+            <h1>Polymarket Monitor</h1>
+            <p>账户资金与临近结算雷达</p>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>钱包地址</span>
+          <input id="walletInput" autocomplete="off" spellcheck="false" placeholder="0x...">
+        </label>
+
+        <div class="control-row">
+          <label class="field compact">
+            <span>刷新间隔</span>
+            <select id="intervalSelect">
+              <option value="10000">10 秒</option>
+              <option value="15000" selected>15 秒</option>
+              <option value="30000">30 秒</option>
+              <option value="60000">60 秒</option>
+            </select>
+          </label>
+          <label class="toggle">
+            <input id="autoRefresh" type="checkbox" checked>
+            <span>自动</span>
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button id="saveWalletBtn" class="primary">保存</button>
+          <button id="refreshBtn">刷新</button>
+        </div>
+
+        <nav class="tabs" aria-label="views">
+          <button class="tab active" data-tab="overview">账户</button>
+          <button class="tab" data-tab="positions">持仓</button>
+          <button class="tab" data-tab="activity">活动</button>
+          <button class="tab" data-tab="radar">雷达</button>
+        </nav>
+
+        <div class="note">
+          <strong>只读接入</strong>
+          <p>这个版本只使用公开钱包地址，不保存私钥，不提交订单。</p>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">LIVE ACCOUNT</p>
+            <h2 id="pageTitle">账户概览</h2>
+          </div>
+          <div class="status-line">
+            <span id="apiStatus" class="status idle">等待地址</span>
+            <span id="lastUpdated">未刷新</span>
+          </div>
+        </header>
+
+        <div id="errorBox" class="error hidden"></div>
+
+        <section id="overview" class="view active">
+          <div class="metrics-grid">
+            <article class="metric major">
+              <span>持仓价值</span>
+              <strong id="positionValue">$0.00</strong>
+              <small>公开 Data API /value</small>
+            </article>
+            <article class="metric">
+              <span>未实现盈亏</span>
+              <strong id="unrealizedPnl">$0.00</strong>
+              <small id="unrealizedPct">0.00%</small>
+            </article>
+            <article class="metric">
+              <span>已实现盈亏</span>
+              <strong id="realizedPnl">$0.00</strong>
+              <small>当前持仓口径</small>
+            </article>
+            <article class="metric">
+              <span>现金余额</span>
+              <strong>未接入</strong>
+              <small>需要授权或链上余额源，第一版不碰私钥</small>
+            </article>
+          </div>
+
+          <div class="split">
+            <section class="panel">
+              <div class="panel-head">
+                <h3>风险摘要</h3>
+              </div>
+              <dl class="summary-list">
+                <div><dt>持仓数量</dt><dd id="positionsCount">0</dd></div>
+                <div><dt>总买入</dt><dd id="totalBought">$0.00</dd></div>
+                <div><dt>可赎回价值</dt><dd id="redeemableValue">$0.00</dd></div>
+                <div><dt>可合并持仓</dt><dd id="mergeableCount">0</dd></div>
+              </dl>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h3>最大敞口</h3>
+              </div>
+              <div id="largestMarket" class="largest-market muted">暂无持仓</div>
+            </section>
+          </div>
+        </section>
+
+        <section id="positions" class="view">
+          <div class="table-shell">
+            <table>
+              <thead>
+                <tr>
+                  <th>市场</th>
+                  <th>方向</th>
+                  <th>数量</th>
+                  <th>均价</th>
+                  <th>现价</th>
+                  <th>现值</th>
+                  <th>PnL</th>
+                  <th>到期</th>
+                </tr>
+              </thead>
+              <tbody id="positionsBody">
+                <tr><td colspan="8" class="empty">输入钱包地址后刷新</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="activity" class="view">
+          <div class="table-shell">
+            <table>
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>类型</th>
+                  <th>市场</th>
+                  <th>方向</th>
+                  <th>价格</th>
+                  <th>数量/金额</th>
+                </tr>
+              </thead>
+              <tbody id="activityBody">
+                <tr><td colspan="6" class="empty">暂无活动</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="radar" class="view">
+          <div class="panel radar-note">
+            <h3>临近结算候选</h3>
+            <p>这里先做监控：未来 24 小时内结束、领先价格仍在 0.55-0.86、流动性尚可的合约。真正是否入场，还要接外部结果源和规则判定。</p>
+          </div>
+          <div class="table-shell">
+            <table>
+              <thead>
+                <tr>
+                  <th>分数</th>
+                  <th>市场</th>
+                  <th>领先方向</th>
+                  <th>价格</th>
+                  <th>剩余</th>
+                  <th>流动性</th>
+                  <th>成交量</th>
+                </tr>
+              </thead>
+              <tbody id="radarBody">
+                <tr><td colspan="7" class="empty">刷新后显示候选</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
